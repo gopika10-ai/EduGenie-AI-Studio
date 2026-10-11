@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17152d">
+  <title>EduGenie — Learning Studio</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="EduGenie home"><span class="brand-mark">E</span><span>EduGenie<span class="brand-dot">.</span></span></a>
+      <span class="top-note"><span class="status-dot"></span> AI learning studio</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow">YOUR PERSONAL STUDY PARTNER</div>
+        <h1>Make learning feel<br><span>less complicated.</span></h1>
+        <p>Ask questions, break down difficult ideas, revise faster, and build your next learning plan.</p>
+        <div class="hero-tags"><span>✦ Gemini-powered</span><span>✦ Beginner-friendly</span><span>✦ Learn at your pace</span></div>
+      </section>
+
+      <section class="workspace">
+        <aside class="feature-panel">
+          <div class="panel-label">LEARNING TOOLS</div>
+          <button class="tool active" data-task="qa"><span class="tool-icon">↗</span><span><b>Ask a question</b><small>Clear answers, step by step</small></span></button>
+          <button class="tool" data-task="explain"><span class="tool-icon">✳</span><span><b>Explain a concept</b><small>Make a hard topic simpler</small></span></button>
+          <button class="tool" data-task="quiz"><span class="tool-icon">▤</span><span><b>Build a quiz</b><small>Check what you understand</small></span></button>
+          <button class="tool" data-task="summarize"><span class="tool-icon">≡</span><span><b>Summarize notes</b><small>Keep the key information</small></span></button>
+          <button class="tool" data-task="learn"><span class="tool-icon">⌁</span><span><b>Learning roadmap</b><small>Plan your next steps</small></span></button>
+          <div class="privacy-note"><span>🔒</span><p>Your API key stays on your computer. Avoid entering personal or confidential information.</p></div>
+        </aside>
+
+        <section class="work-area">
+          <div class="work-heading"><div><div class="panel-label">WORKSPACE</div><h2 id="task-title">Ask a question</h2></div><span class="sparkle">✦</span></div>
+          <p id="task-description" class="task-description">What would you like to understand today?</p>
+          <form id="study-form">
+            <label for="topic" id="input-label">YOUR QUESTION</label>
+            <textarea id="topic" name="topic" rows="7" maxlength="12000" required placeholder="Example: Explain how photosynthesis works in simple terms..."></textarea>
+            <div class="input-footer"><span id="char-count">0 / 12,000</span><button type="button" id="example-button">Try an example ↗</button></div>
+            <button class="submit-button" id="submit-button" type="submit"><span>Generate learning response</span><span>↗</span></button>
+          </form>
+          <div id="result-card" class="result-card" hidden aria-live="polite">
+            <div class="result-heading"><span class="result-icon">✦</span><div><span class="panel-label">YOUR RESULT</span><h3 id="result-title">Learning response</h3></div><button id="copy-button" class="copy-button" type="button">Copy</button></div>
+            <div id="result-content" class="result-content"></div>
+          </div>
+          <div id="error-message" class="error-message" hidden role="alert"></div>
+          <p class="disclaimer">AI responses can contain mistakes. Check important information with reliable learning materials.</p>
+        </section>
+      </section>
+    </main>
+    <footer><span>EduGenie Learning Studio</span><span>Learn something new today ✦</span></footer>
+  </div>
+  <script>
+    const taskInfo = {
+      qa: {title:"Ask a question", desc:"What would you like to understand today?", label:"YOUR QUESTION", placeholder:"Example: Why do seasons change?", button:"Generate learning response", example:"Why do seasons change? Explain it for a school student.", endpoint:"/qa"},
+      explain: {title:"Explain a concept", desc:"Turn a complicated topic into a clear, beginner-friendly explanation.", label:"TOPIC TO EXPLAIN", placeholder:"Example: Object-oriented programming", button:"Explain this concept", example:"Explain object-oriented programming with a simple real-life example.", endpoint:"/explain"},
+      quiz: {title:"Build a quiz", desc:"Create practice questions from a topic or your study notes.", label:"TOPIC OR STUDY PASSAGE", placeholder:"Paste your notes or enter a topic...", button:"Generate my quiz", example:"Create a quiz about the water cycle: evaporation, condensation, precipitation and collection.", endpoint:"/quiz"},
+      summarize: {title:"Summarize notes", desc:"Turn longer material into revision-friendly key points.", label:"TEXT TO SUMMARIZE", placeholder:"Paste the passage you want to revise...", button:"Summarize my notes", example:"Artificial intelligence is a field of computer science focused on creating systems that perform tasks usually associated with human intelligence. These tasks include recognizing patterns, understanding language, making predictions, and solving problems. Machine learning is a branch of AI that allows systems to learn patterns from data.", endpoint:"/summarize"},
+      learn: {title:"Learning roadmap", desc:"Build a step-by-step plan from beginner foundations to advanced practice.", label:"SKILL OR SUBJECT", placeholder:"Example: Learn SQL for data analysis", button:"Create my roadmap", example:"Create a four-week beginner learning path for SQL, with practice tasks.", endpoint:"/learn/recommendations"}
+    };
+    let activeTask = "qa";
+    const form = document.querySelector("#study-form");
+    const topic = document.querySelector("#topic");
+    const submit = document.querySelector("#submit-button");
+    const resultCard = document.querySelector("#result-card");
+    const resultContent = document.querySelector("#result-content");
+    const errorBox = document.querySelector("#error-message");
+    topic.addEventListener("input", () => document.querySelector("#char-count").textContent = `${topic.value.length.toLocaleString()} / 12,000`);
+    document.querySelectorAll(".tool").forEach(button => button.addEventListener("click", () => {
+      activeTask = button.dataset.task;
+      document.querySelectorAll(".tool").forEach(item => item.classList.toggle("active", item === button));
+      const info = taskInfo[activeTask];
+      document.querySelector("#task-title").textContent = info.title;
+      document.querySelector("#task-description").textContent = info.desc;
+      document.querySelector("#input-label").textContent = info.label;
+      topic.placeholder = info.placeholder;
+      submit.querySelector("span:first-child").textContent = info.button;
+      resultCard.hidden = true; errorBox.hidden = true;
+    }));
+    document.querySelector("#example-button").addEventListener("click", () => {
+      topic.value = taskInfo[activeTask].example;
+      topic.dispatchEvent(new Event("input"));
+      topic.focus();
+    });
+    function addTextBlock(parent, text) {
+      // Render model output as text, not HTML, to avoid executing untrusted markup.
+      const lines = String(text).split("\\n");
+      let paragraph = null;
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) { paragraph = null; continue; }
+        const el = document.createElement("p");
+        el.textContent = trimmed.replace(/^[-*]\\s+/, "• ");
+        parent.appendChild(el);
+      }
+    }
+    function renderResult(data) {
+      resultContent.replaceChildren();
+      if (Array.isArray(data)) {
+        data.forEach((q, index) => {
+          const card = document.createElement("article"); card.className = "quiz-question";
+          const heading = document.createElement("h4"); heading.textContent = `${index + 1}. ${q.question}`; card.appendChild(heading);
+          const options = document.createElement("div"); options.className = "quiz-options";
+          (q.options || []).forEach(option => {
+            const label = document.createElement("label"); label.className = "quiz-option";
+            const radio = document.createElement("input"); radio.type = "radio"; radio.name = `quiz-${index}`; radio.value = option;
+            const span = document.createElement("span"); span.textContent = option;
+            label.append(radio, span); options.appendChild(label);
+          });
+          const check = document.createElement("button"); check.type = "button"; check.className = "check-answer"; check.textContent = "Check answer";
+          const feedback = document.createElement("p"); feedback.className = "quiz-feedback"; feedback.hidden = true;
+          check.addEventListener("click", () => {
+            const selected = options.querySelector("input:checked");
+            feedback.hidden = false;
+            if (!selected) feedback.textContent = "Choose an option first.";
+            else feedback.textContent = (selected.value === q.answer ? "Correct! " : `Not quite. Correct answer: ${q.answer}. `) + (q.explanation || "");
+          });
+          card.append(options, check, feedback); resultContent.appendChild(card);
+        });
+      } else if (data && typeof data === "object" && data.raw_response) {
+        addTextBlock(resultContent, data.raw_response);
+      } else {
+        addTextBlock(resultContent, data);
+      }
+    }
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!topic.value.trim()) return;
+      errorBox.hidden = true; resultCard.hidden = true;
+      submit.disabled = true; submit.querySelector("span:first-child").textContent = "Working on your response...";
+      try {
+        const response = await fetch(taskInfo[activeTask].endpoint, {
+          method: "POST", headers: {"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+          body: new URLSearchParams({topic: topic.value.trim()})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Request failed. Please try again.");
+        renderResult(data.result);
+        document.querySelector("#result-title").textContent = taskInfo[activeTask].title;
+        resultCard.hidden = false;
+      } catch (error) {
+        errorBox.textContent = error.message || "Could not connect to EduGenie. Is the server running?";
+        errorBox.hidden = false;
+      } finally {
+        submit.disabled = false;
+        submit.querySelector("span:first-child").textContent = taskInfo[activeTask].button;
+      }
+    });
+    document.querySelector("#copy-button").addEventListener("click", async () => {
+      const text = resultContent.innerText;
+      try { await navigator.clipboard.writeText(text); document.querySelector("#copy-button").textContent = "Copied!"; }
+      catch { document.querySelector("#copy-button").textContent = "Select text to copy"; }
+    });
+  </script>
+</body>
+</html>
